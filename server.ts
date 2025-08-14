@@ -20,6 +20,9 @@ server.listen(3000, () => {
 
 import fastify from "fastify";
 import crypto from "crypto";
+import { db } from "./src/database/client.ts"; // Importando o cliente do banco de dados
+import { courses } from "./src/database/schema.ts";
+import { eq } from "drizzle-orm";
 
 const server = fastify({
   logger: {
@@ -34,20 +37,26 @@ const server = fastify({
   }, // Habilita o log do servidor
 });
 
-const cursos = [
-  { id: "1", name: "Curso de Node.js" },
-  { id: "2", name: "Curso de JavaScript" },
-  { id: "3", name: "Curso de React" },
-];
+// const cursos = [
+//   { id: "1", name: "Curso de Node.js" },
+//   { id: "2", name: "Curso de JavaScript" },
+//   { id: "3", name: "Curso de React" },
+// ];
 
-server.get("/courses", () => {
+server.get("/courses", async (request, reply) => {
   //Rota para listar cursos
   // Retorna a lista de cursos
-  return { cursos };
+  const result = await db
+    .select({
+      id: courses.id,
+      name: courses.name,
+    })
+    .from(courses); // Consulta ao banco de dados
+  return reply.send({ courses: result }); // Envia a resposta com os cursos
 });
 
 //criando uma rota para buscar um curso pelo id
-server.get("/courses/:id", (request, reply) => {
+server.get("/courses/:id", async (request, reply) => {
   type Params = {
     id: string;
   };
@@ -55,36 +64,41 @@ server.get("/courses/:id", (request, reply) => {
   const params = request.params as Params; //criando um tipo para os parâmetros da rota
   const courseId = params.id; // Extrai o ID do curso dos parâmetros da rota
 
-  const curso = cursos.find((course) => course.id === courseId);
-  if (curso) {
-    return { curso };
+  const result = await db
+    .select()
+    .from(courses)
+    .where(eq(courses.id, courseId)); // Consulta ao banco de dados para buscar o curso pelo ID
+
+  if (result.length > 0) {
+    return { course: result[0] };
   } else {
     return reply.status(404).send({ message: "Curso não encontrado!" });
   }
 });
-// Rota para criar um curso, ambas compartilham o mesmo caminho/recurso, mas comm métodos diferentes.
-server.post("/courses", (request, reply) => {
-  type body = { name: string }; // Define o tipo do corpo da requisição
 
-  const body = request.body as body; // Extrai o corpo da requisição e o tipa como 'body'
+// // Rota para criar um curso, ambas compartilham o mesmo caminho/recurso, mas comm métodos diferentes.
+// server.post("/courses", (request, reply) => {
+//   type body = { name: string }; // Define o tipo do corpo da requisição
 
-  // Verifica se o corpo da requisição contém o nome do curso
-  const courseName = body.name; // Extrai o nome do curso do corpo da requisição
+//   const body = request.body as body; // Extrai o corpo da requisição e o tipa como 'body'
 
-  if (!courseName) {
-    return reply.status(400).send({ message: "Nome do curso é obrigatório!" });
-  }
+//   // Verifica se o corpo da requisição contém o nome do curso
+//   const courseName = body.name; // Extrai o nome do curso do corpo da requisição
 
-  // Gera um ID único para o novo curso
-  const cursoId = crypto.randomUUID();
+//   if (!courseName) {
+//     return reply.status(400).send({ message: "Nome do curso é obrigatório!" });
+//   }
 
-  // Lógica para criar um novo curso
-  cursos.push({
-    id: cursoId,
-    name: courseName,
-  });
-  return reply.status(201).send({ cursoId }); //201 é o código de criação
-});
+//   // Gera um ID único para o novo curso
+//   const cursoId = crypto.randomUUID();
+
+//   // Lógica para criar um novo curso
+//   cursos.push({
+//     id: cursoId,
+//     name: courseName,
+//   });
+//   return reply.status(201).send({ cursoId }); //201 é o código de criação
+// });
 
 server
   .listen({ port: 3000 })

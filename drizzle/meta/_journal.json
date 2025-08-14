@@ -8,6 +8,13 @@
       "when": 1755136602679,
       "tag": "0000_lethal_freak",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1755137579049,
+      "tag": "0001_black_natasha_romanoff",
+      "breakpoints": true
     }
   ]
 }

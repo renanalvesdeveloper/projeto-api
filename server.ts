@@ -44,20 +44,22 @@ const server = fastify({
   }, // Habilita o log do servidor
 }).withTypeProvider<ZodTypeProvider>(); // Adiciona o provedor de tipos do Zod
 
-server.register(fastifySwagger, {
-  openapi: {
-    info: {
-      title: "API de Cursos",
-      description: "API para gerenciar cursos",
-      version: "1.0.0",
+if (process.env.NODE_ENV === "development") {
+  server.register(fastifySwagger, {
+    openapi: {
+      info: {
+        title: "API de Cursos",
+        description: "API para gerenciar cursos",
+        version: "1.0.0",
+      },
     },
-  },
-  transform: jsonSchemaTransform, // Usa a transformação do JSON Schema para Zod
-});
+    transform: jsonSchemaTransform, // Usa a transformação do JSON Schema para Zod
+  });
 
-server.register(scalarAPIReference, {
-  routePrefix: "/docs",
-});
+  server.register(scalarAPIReference, {
+    routePrefix: "/docs",
+  });
+}
 
 server.setValidatorCompiler(validatorCompiler); // Configura o validador global usando Zod
 server.setSerializerCompiler(serializerCompiler); // Configura o serializador global usando Zod

@@ -19,10 +19,17 @@ server.listen(3000, () => {
 // const crypto = require("crypto");
 
 import fastify from "fastify";
-import crypto from "crypto";
-import { db } from "./src/database/client.ts"; // Importando o cliente do banco de dados
-import { courses } from "./src/database/schema.ts";
-import { eq } from "drizzle-orm";
+import {
+  validatorCompiler,
+  serializerCompiler,
+  type ZodTypeProvider,
+  jsonSchemaTransform,
+} from "fastify-type-provider-zod";
+import { createCourseRoute } from "./src/routes/create-course.ts";
+import { getCourseByIdRoute } from "./src/routes/get-course-by-id.ts";
+import { getCoursesRoute } from "./src/routes/get-courses.ts";
+import fastifySwagger from "@fastify/swagger";
+import scalarAPIReference from "@scalar/fastify-api-reference";
 
 const server = fastify({
   logger: {
@@ -35,71 +42,29 @@ const server = fastify({
       },
     },
   }, // Habilita o log do servidor
+}).withTypeProvider<ZodTypeProvider>(); // Adiciona o provedor de tipos do Zod
+
+server.register(fastifySwagger, {
+  openapi: {
+    info: {
+      title: "API de Cursos",
+      description: "API para gerenciar cursos",
+      version: "1.0.0",
+    },
+  },
+  transform: jsonSchemaTransform, // Usa a transformação do JSON Schema para Zod
 });
 
-// const cursos = [
-//   { id: "1", name: "Curso de Node.js" },
-//   { id: "2", name: "Curso de JavaScript" },
-//   { id: "3", name: "Curso de React" },
-// ];
-
-server.get("/courses", async (request, reply) => {
-  //Rota para listar cursos
-  // Retorna a lista de cursos
-  const result = await db
-    .select({
-      id: courses.id,
-      name: courses.name,
-    })
-    .from(courses); // Consulta ao banco de dados
-  return reply.send({ courses: result }); // Envia a resposta com os cursos
+server.register(scalarAPIReference, {
+  routePrefix: "/docs",
 });
 
-//criando uma rota para buscar um curso pelo id
-server.get("/courses/:id", async (request, reply) => {
-  type Params = {
-    id: string;
-  };
+server.setValidatorCompiler(validatorCompiler); // Configura o validador global usando Zod
+server.setSerializerCompiler(serializerCompiler); // Configura o serializador global usando Zod
 
-  const params = request.params as Params; //criando um tipo para os parâmetros da rota
-  const courseId = params.id; // Extrai o ID do curso dos parâmetros da rota
-
-  const result = await db
-    .select()
-    .from(courses)
-    .where(eq(courses.id, courseId)); // Consulta ao banco de dados para buscar o curso pelo ID
-
-  if (result.length > 0) {
-    return { course: result[0] };
-  } else {
-    return reply.status(404).send({ message: "Curso não encontrado!" });
-  }
-});
-
-// // Rota para criar um curso, ambas compartilham o mesmo caminho/recurso, mas comm métodos diferentes.
-// server.post("/courses", (request, reply) => {
-//   type body = { name: string }; // Define o tipo do corpo da requisição
-
-//   const body = request.body as body; // Extrai o corpo da requisição e o tipa como 'body'
-
-//   // Verifica se o corpo da requisição contém o nome do curso
-//   const courseName = body.name; // Extrai o nome do curso do corpo da requisição
-
-//   if (!courseName) {
-//     return reply.status(400).send({ message: "Nome do curso é obrigatório!" });
-//   }
-
-//   // Gera um ID único para o novo curso
-//   const cursoId = crypto.randomUUID();
-
-//   // Lógica para criar um novo curso
-//   cursos.push({
-//     id: cursoId,
-//     name: courseName,
-//   });
-//   return reply.status(201).send({ cursoId }); //201 é o código de criação
-// });
-
+server.register(createCourseRoute);
+server.register(getCourseByIdRoute);
+server.register(getCoursesRoute);
 server
   .listen({ port: 3000 })
   .then(() => {

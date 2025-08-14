@@ -4,7 +4,7 @@ POST http://localhost:3000/courses
 Content-Type: application/json
 
 {
-    "name": "Curso de Fastify"
+    "name": "Curso de Docker"
 }
 
 ### 
@@ -13,4 +13,4 @@ GET http://localhost:3000/courses
 
 ###
 
-GET http://localhost:3000/courses/100
+GET http://localhost:3000/courses/62b2de70-5031-4522-bf41-3b8f823ad1fd

@@ -1,0 +1,16 @@
+
+
+POST http://localhost:3000/courses
+Content-Type: application/json
+
+{
+    "name": "Curso de Fastify"
+}
+
+### 
+
+GET http://localhost:3000/courses
+
+###
+
+GET http://localhost:3000/courses/100
